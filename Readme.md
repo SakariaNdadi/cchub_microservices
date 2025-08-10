@@ -34,13 +34,13 @@ Before we dive in, it's critical to be honest: **microservices are not a free lu
 
 Technical debt accumulates in any architecture, but it manifests differently.
 
-- In a Monolith:
+- **In a Monolith:**
 
   - **Drawback:** The codebase can become a "Big Ball of Mud." Over time, components become tightly coupled, making changes slow and risky. A bug in one small feature can bring down the entire application. Scaling is all-or-nothing; if one part of the app needs more resources, you have to scale the whole thing.
 
   - **Technical Debt:** Looks like tangled dependencies, a fear of refactoring, and a development cycle that grinds to a halt as the system grows.
 
-- In a Microservices Architecture:
+- **In a Microservices Architecture:**
 
   - **Drawback:** You've traded application complexity for operational complexity. You now have a distributed system, which introduces network latency, fault tolerance challenges, and complex debugging (a single request might travel through multiple services). Data consistency across services is a major hurdle.
 
