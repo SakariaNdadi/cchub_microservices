@@ -1,0 +1,15 @@
+{% load tailwind_filters  %}
+<form method="post">
+    {% csrf_token %}
+    <div class="px-4 py-4">
+        {{ form|crispy }}
+    </div>
+    <div
+        class="flex flex-col-reverse justify-between gap-2 border-t border-neutral-300 bg-neutral-50/60 p-4 dark:border-neutral-700 dark:bg-neutral-950/20 sm:flex-row sm:items-center md:justify-end">
+        <button x-on:click="modalIsOpen = false" type="button"
+            class="whitespace-nowrap rounded-sm px-4 py-2 text-center text-sm font-medium tracking-wide text-neutral-600 transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black active:opacity-100 active:outline-offset-0 dark:text-neutral-300 dark:focus-visible:outline-white">Cancel</button>
+        <button x-on:click="modalIsOpen = false" type="button" hx-post="{% url 'todo_new' %}" hx-trigger="click"
+            hx-target="#table" hx-swap="beforeend"
+            class="whitespace-nowrap rounded-sm bg-black border border-black dark:border-white px-4 py-2 text-center text-sm font-medium tracking-wide text-neutral-100 transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black active:opacity-100 active:outline-offset-0 dark:bg-white dark:text-black dark:focus-visible:outline-white">Create</button>
+    </div>
+</form>

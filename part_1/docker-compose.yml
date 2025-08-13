@@ -1,0 +1,14 @@
+services:
+  django:
+    build: .
+    container_name: monolith
+    command: uv run manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./apps:/app/apps
+      - ./core:/app/core
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./media:/app/media
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
