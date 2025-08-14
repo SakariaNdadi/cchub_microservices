@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     # My apps
     "apps.accounts",
     "apps.todos",
-    "apps.logs",
 ]
 
 MIDDLEWARE = [
@@ -142,10 +141,5 @@ COTTON_DIR = "components"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
 
-CELERY_TIMEZONE = "Africa/Windhoek"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 
 EMAIL_SERVICE_URL = os.environ.get("EMAIL_API_URL")

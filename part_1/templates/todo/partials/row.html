@@ -13,8 +13,11 @@
         {{ todo.remind_at|date:"F j, Y" }}
     </td>
     <td class="px-6 py-4">
-        <a hx-delete="{% url 'todo_delete' todo.id %}" hx-confirm="Are you sure you want to delete this reminder?"
-            class="text-red-500 hover:underline" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}' @click.stop> Delete
-        </a>
+        <form action="{% url 'todo_delete' todo.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="text-red-500 hover:underline">
+                Delete
+            </button>
+        </form>
     </td>
 </tr>

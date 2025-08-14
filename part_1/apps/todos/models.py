@@ -16,13 +16,8 @@ class Todo(models.Model):
     profile = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="todos")
     title = models.CharField(max_length=50)
     description = models.TextField(blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS.choices, default=STATUS.DRAFT)
     remind_at = models.DateTimeField()
-    image = models.ImageField(upload_to="todos/", blank=True, null=True)
-    location_name = models.CharField(max_length=255, default="Windhoek, Namibia")
-    latitude = models.FloatField(default=22.5649)
-    longitude = models.FloatField(default=17.0842)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
