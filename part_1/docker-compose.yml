@@ -1,4 +1,16 @@
 services:
+  db:
+    image: postgres:17.5-alpine
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
   django:
     build: .
     container_name: monolith
@@ -11,4 +23,15 @@ services:
       - ./media:/app/media
     ports:
       - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
     restart: unless-stopped
+
+volumes:
+  postgres_data:
