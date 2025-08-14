@@ -13,11 +13,6 @@
         {{ todo.remind_at|date:"F j, Y" }}
     </td>
     <td class="px-6 py-4">
-        <form action="{% url 'todo_delete' todo.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="text-red-500 hover:underline">
-                Delete
-            </button>
-        </form>
+
     </td>
 </tr>
