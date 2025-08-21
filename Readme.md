@@ -1,156 +1,152 @@
-# CCHUB Microservice Presentation
+# CCHUB Microservice Workshop - Part 2: Building a Scalable & Resilient Ecosystem
 
-Welcome to the CCHUB workshop on microservices! Over the next two sessions, we will embark on a practical journey from a traditional monolithic application to a modern, scalable microservices architecture. We'll explore the core concepts, tools, and patterns you need to build resilient and flexible systems.
+Welcome back to the second and final session of our microservices workshop! Today, August 21, 2025, we move from theory to practice. We will take the concepts from Part 1 and build out a fully containerized, polyglot microservices ecosystem. 🚀
 
-## Expected Outcomes
+Our goal is to implement the services we've designed, tackle the challenges of a distributed system, and integrate modern AI capabilities. Let's get building!
 
-By the end of this series, participants will:
+## Today's Architecture: A Polyglot Ecosystem
 
-- Have a solid technical foundation in enterprise software development.
+We are bringing our architecture to life using docker-compose. This setup simulates a real-world production environment where multiple independent services work together. Each service is designed for a specific purpose and can be developed, deployed, and scaled independently.
 
-- Gain a deep understanding of the backend and architectural patterns that power modern applications.
+Here's a breakdown of the services defined in our docker-compose.yml file:
 
-- Understand cloud, DevOps, and scalable deployment practices.
+#### Core Infrastructure
 
-- Be exposed to emerging technologies and leadership practices.
+- `db` **(PostgreSQL 🐘)**: Our relational database. For this workshop, multiple services will connect to it. In a more mature architecture, you would likely adopt a database-per-service pattern.
 
-- Build the foundational architectural knowledge required to grow towards roles like software architect or technical lead.
+- `rabbitmq` **(RabbitMQ 🐇)**: The message broker. This is the backbone of our event-driven architecture. It allows our services to communicate asynchronously, decoupling them and improving resilience. If one service is down, messages can queue up and be processed later.
 
-## Prerequisites
+#### Application Services
 
-Before we begin, please ensure you have the following ready:
+- `django` & `celery_worker` **(Python/Django 🐍)**: Our original monolith is now just another service. The django container runs the web server, and the celery_worker handles background tasks (like publishing messages to RabbitMQ) off the main request thread.
 
-- **Git and Docker Installed:** We will be using both tools.
+- `api-service` **(Python/FastAPI ⚡)**: A new, high-performance microservice built with FastAPI. This could be used to expose a fast, modern API for a mobile client or a single-page application, separate from the original Django monolith.
 
-- **Basic Understanding:** A foundational knowledge of how Git (for version control) and Docker (for containerization) work is required.
+- `email-service` **(Node.js ✉️)**: A dedicated service whose only job is to send emails. This demonstrates the polyglot nature of microservices—we're using the right tool (or language) for the job. It will listen for events from RabbitMQ and act on them.
 
-- **Focus on Architecture:** Please note that this workshop will focus on high-level architecture and design patterns. We will not be doing in-depth programming.
+- `go-service` **(Go 🤖)**: Our AI-powered microservice. Written in Go for performance, this service integrates with Google's AI Platform (Vertex AI) to provide intelligent features. It can process data and use Gemini to generate text or analyze information, then call back to other services to update them.
 
-## An Honest Look at the Trade-Offs: Monolith vs. Microservices
+### Prerequisites
 
-Before we dive in, it's critical to be honest: **microservices are not a free lunch**. They solve certain problems while creating new, often more complex ones. The goal is not to blindly adopt a trend, but to choose the right set of trade-offs for your specific situation.
+Before you begin, please ensure you have the following installed and configured:
 
-## The Reality of Technical Debt and Drawbacks
+1. Git: For version control.
 
-Technical debt accumulates in any architecture, but it manifests differently.
+2. Docker & Docker Compose: To build and run our containerized services.
 
-- **In a Monolith:**
+3. A Google Cloud Platform (GCP) Account: The `go-service` requires access to Google's AI services. You will need a GCP project with billing enabled to proceed.
 
-  - **Drawback:** The codebase can become a "Big Ball of Mud." Over time, components become tightly coupled, making changes slow and risky. A bug in one small feature can bring down the entire application. Scaling is all-or-nothing; if one part of the app needs more resources, you have to scale the whole thing.
+### 🛠️ Setup and Configuration
 
-  - **Technical Debt:** Looks like tangled dependencies, a fear of refactoring, and a development cycle that grinds to a halt as the system grows.
+Follow these steps carefully to get the project running.
 
-- **In a Microservices Architecture:**
+**Step 1: Clone the Repository**
+If you haven't already, clone the project repository to your local machine.
 
-  - **Drawback:** You've traded application complexity for operational complexity. You now have a distributed system, which introduces network latency, fault tolerance challenges, and complex debugging (a single request might travel through multiple services). Data consistency across services is a major hurdle.
+```
+# Clone the repository
 
-  - **Technical Debt:** Looks like inconsistent data between services, complex deployment pipelines, "dependency hell" between services, and significant cognitive overhead for developers who need to understand the whole system.
+git clone <your-repository-url>
+cd <repository-directory>
+```
 
-## What You Gain vs. What You Sacrifice
+**Step 2: Configure the Email Service**
+The email-service needs credentials to send emails.
 
-Moving from a monolith to microservices is a fundamental shift with clear trade-offs.
+1. Create a .env file in the project root by copying the example:
 
-- **What You GAIN:**
+   `cp .env.example .env`
 
-  - **Team Autonomy:** Small, independent teams can own their services, developing and deploying on their own schedules. This is great for organizational scaling.
+2. Open the new .env file and fill in the details for your email provider (e.g., SendGrid, Mailgun).
 
-  - **Targeted Scaling:** You can scale individual services that are under heavy load without touching the rest of the system.
+**Step 3: Configure the AI Service (Go)**
 
-  - **Technological Freedom:** Teams can choose the best language or framework for their specific service.
+This is the most critical setup step. The go-service needs credentials to authenticate with Google Cloud.
 
-  - **Resilience:** If designed correctly, the failure of one non-critical service won't bring down the entire application.
+1. **Select or Create a GCP Project:** Go to the [Google Cloud Console](https://console.cloud.google.com) and select an existing project or create a new one.
 
-- **What You SACRIFICE:**
+2. **Enable the Vertex AI API:**
 
-  - **Simplicity:** A monolith is simpler to develop, test, and deploy, especially early on.
+   - In the console, navigate to "APIs & Services" > "Library".
 
-  - **Strong Consistency:** Achieving ACID-compliant transactions across multiple distributed services is extremely difficult. You often have to embrace eventual consistency.
+   - Search for "Vertex AI API" and click **Enable**.
 
-  - **Easy Debugging:** Tracing a bug in a monolith is straightforward. Tracing it across a dozen network calls in a microservices environment requires sophisticated observability tools.
+3. **Create a Service Account:**
 
-  - **Low Operational Overhead:** Running one application is far easier than deploying, managing, and monitoring dozens or hundreds of services.
+   - Navigate to "IAM & Admin" > "Service Accounts".
 
-## When Should You Actually Consider Microservices?
+   - Click "**+ CREATE SERVICE ACCOUNT**".
 
-Don't start with microservices just because it's trendy. Consider moving when:
+   - Give it a name (e.g., cchub-microservice-account) and a description.
 
-1. **Your Monolith is Crippling Productivity:** Your development teams are stepping on each other's toes, and deploying a small change takes weeks of testing and coordination.
+   - Click **"CREATE AND CONTINUE"**.
 
-2. **You Have Clear, Independent Scaling Needs:** A specific part of your application (e.g., video processing) requires 100x the resources of another part (e.g., user profiles).
+     In the "Grant this service account access to project" step, add the **"Vertex AI User"** role. This gives it permission to interact with Vertex AI models like Gemini.
 
-3. **Your Organization is Scaling:** You need to structure your engineering department into multiple, autonomous teams that can deliver value independently.
+     Click **"CONTINUE"**, then **"DONE"**.
 
-## Case Studies: Giants on Different Paths
+4. **Create and Download a JSON Key:**
 
-- **Monoliths at Scale:**
+   - Find your newly created service account in the list.
 
-  - **Shopify:** Powers a massive portion of e-commerce on a single, majestic Ruby on Rails monolith. They've made it work by investing heavily in custom tooling, platform engineering, and infrastructure. This allows them to maintain high development velocity with a unified codebase.
+   - Click on the three-dot menu under "Actions" and select **"Manage keys"**.
 
-  - **Stack Overflow:** The world's most famous Q&A site for developers runs on a .NET monolith. They prove that with smart engineering and a focus on performance, a monolithic architecture can handle immense traffic efficiently.
+   - Click **"ADD KEY"** > **"Create new key"**.
 
-- **Built on Microservices:**
+   - Choose JSON as the key type and click **"CREATE"**.
 
-  - **Amazon:** Perhaps the most famous example. The retail website started as a monolith. A mandate from Jeff Bezos forced the company to break it down into single-purpose services that communicate via APIs. This unlocked the massive parallel development that allowed Amazon to grow into the giant it is today.
+   - A JSON file will be downloaded to your computer. **Rename this file to** `gcp-credentials.json` and place it in the root directory of this project.
 
-  - **Netflix:** Famously migrated from a monolith to a cloud-based microservices architecture on AWS. This move was essential for them to achieve the global scale, resilience, and rapid feature development needed to dominate the streaming industry.
+5. **Update** `docker-compose.yml`:
 
-### Series 2, Part 1: From Monolith to Microservices
+   - Open the `docker-compose.yml` file.
 
-**Date:** 14 August 2025
+   - Find the `go-service` definition.
 
-This first session is all about setting the stage. We will begin by examining a standard monolithic application to understand its structure and limitations.
+   - Fill in the `environment` variables with your specific GCP details:
 
-**Our Starting Point: The Django Monolith**
+```
+        environment:
+          - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+          - GCP_PROJECT_ID=your-gcp-project-id-here # 👈 UPDATE THIS
+          - GCP_LOCATION=us-central1 # 👈 UPDATE THIS (or your preferred location)
+          # - GEMINI_API_KEY=... # This is an alternative to a service account
+          - GIN_MODE=release
+          - DJANGO_CALLBACK_URL_FORMAT=http://django:8000/todos/api/%d/complete/
+```
 
-To make this real, we're starting with a complete application built with Django. The code for this monolith lives on the `part_1` branch of this repository.
+# ▶️ Running the Project
 
-`git checkout part_1`
+Once all configuration is complete, you can start the entire microservices ecosystem with two commands.
 
-This branch represents a typical, single-unit application where all the code—user authentication, business logic, data access—is in one codebase, connected to a single database. We will use this as our case study to discuss the "why" and "how" of moving to microservices.
+1. **Build the Docker Images:**
+   This command builds the images for all our custom services based on their Dockerfiles.
 
-#### Topics We'll Cover in Part 1:
+   `docker-compose build`
 
-- **Microservices Implementation and Communication Patterns:**
+2. **Start all Services:**
+   This command starts all services in detached mode `(-d)`, so they run in the background.
 
-  - Strategies for breaking down a monolith.
+   `docker-compose up -d`
 
-  - How services talk to each other (e.g., synchronous vs. asynchronous).
+You should see output indicating that all containers are starting up. To check the status and logs:
 
-- **Database Performance Optimization:**
+- **See all running containers:** docker-compose ps
 
-  - Preparing for distributed data with techniques like indexing and sharding.
+- **View logs for a specific service (e.g., Django):** docker-compose logs -f django
 
-  - The role of Object-Relational Mapping (ORM) tools in this new architecture.
+- **Stop all services**: docker-compose down
 
-- **Cloud Computing & DevOps:**
+# 🌐 Exploring the System
 
-  - Containerizing our services with Docker.
-  - Why Kubernetes?
+With everything running, you can now interact with the different parts of our distributed application:
 
-## Coming Up in Part 2: Building a Scalable & Resilient Ecosystem
+- **Django Web App:** Open your browser to `http://localhost:8000`
 
-**Date:** 21 August 2025
+- **FastAPI Service Docs:** Check out the API docs at `http://localhost:8001/docs`
 
-In our second session, we will build upon the foundations from Part 1. We will implement several microservices and tackle the challenges of running a distributed system in production.
+- **RabbitMQ Management UI:** Monitor queues and messages at `http://localhost:15672` (Login with guest/guest)
 
-#### What to Expect:
+Try creating a new "To-Do" item in the Django app. Watch the logs and the RabbitMQ dashboard to see how an event is published and consumed by the `email-service` and the `go-service `to trigger actions across the system.
 
-We will focus on building robust, independent services and making them work together seamlessly. The topics include:
-
-- Building & Managing Scalable APIs: Best practices for rate limiting, documentation, and versioning.
-
-- Event-Driven Architecture: Decoupling our services using message brokers like RabbitMQ, and understanding alternatives like Kafka and SQS.
-
-- Enterprise Security & Compliance: Implementing modern security with OAuth2, ensuring data protection with encryption, and adhering to regulations like GDPR.
-
-#### Technologies to Research for Part 2:
-
-To get the most out of our next session, we encourage you to familiarize yourself with the following technologies. We'll be using a mix of them to demonstrate the polyglot nature of microservices:
-
-- **Backend Services:** Django, Go, FastAPI and Node.js
-
-- **Messaging Queue:** RabbitMQ
-
-- **AI-Powered Services:** We will also explore creating a dedicated microservice that leverages Large Language Models and Image Generation with Gemini and Imagen.
-
-Get ready for a hands-on experience building the future of application architecture!
+Enjoy the hands-on experience!
