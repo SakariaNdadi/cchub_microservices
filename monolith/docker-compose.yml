@@ -1,0 +1,144 @@
+services:
+  db:
+    image: postgres:17.5-alpine
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  django:
+    build: .
+    container_name: django_web
+    command: uv run manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - venv:/app/.venv
+      - ./go_service:/go_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - GO_API_URL=http://go-service:8080/
+      - EMAIL_API_URL=http://email-service:4000/send-todo-email
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: uv run celery -A core worker -l info
+    volumes:
+      - .:/app
+      - venv:/app/.venv
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - GO_API_URL=http://go-service:8080/
+      - EMAIL_API_URL=http://email-service:4000/send-todo-email
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  api-service:
+    build:
+      context: ../api_service
+      dockerfile: ../api_service/Dockerfile
+    container_name: api-service
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8001
+    depends_on:
+      - db
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  email-service:
+    build:
+      context: ../email_service
+      dockerfile: ../email_service/Dockerfile
+    container_name: email-service
+    depends_on:
+      - django
+      - celery_worker
+    ports:
+      - "8090:4000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  go-service:
+    build:
+      context: ../go_service
+      dockerfile: ../go_service/Dockerfile
+    container_name: go-service
+    depends_on:
+      - django
+      - celery_worker
+    ports:
+      - "8080:8080"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+      - GCP_PROJECT_ID=
+      - GCP_LOCATION=
+      - GEMINI_API_KEY=
+      - GIN_MODE=release
+      - DJANGO_CALLBACK_URL_FORMAT=http://django:8000/todos/api/%d/complete/
+    volumes:
+      - ./gcp-credentials.json:/app/gcp-credentials.json
+    restart: unless-stopped
+    networks:
+      - app-net
+
+volumes:
+  postgres_data:
+  venv:
+
+networks:
+  app-net:
+    driver: bridge

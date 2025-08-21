@@ -1,0 +1,68 @@
+{% extends '_base.html' %}
+{% block content %}
+<c-navbar />
+<section class="mt-10 px-5" x-data="{detailModalIsOpen: false}" @keydown.escape.window="isModalOpen = false">
+    <div class="relative overflow-x-auto">
+        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                    <th scope="col" class="px-6 py-3">
+                        Title
+                    </th>
+                    <th scope="col" class="px-6 py-3">
+                        Description
+                    </th>
+                    <th scope="col" class="px-6 py-3">
+                        remind At
+                    </th>
+                    <th scope="col" class="px-6 py-3">
+
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="table">
+                {% for todo in todos %}
+                {% include 'todo/partials/row.html' %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div x-cloak x-show="detailModalIsOpen" x-transition.opacity.duration.200ms
+        x-trap.inert.noscroll="detailModalIsOpen" x-on:keydown.esc.window="detailModalIsOpen = false"
+        x-on:click.self="detailModalIsOpen = false"
+        class="fixed inset-0 z-30 flex items-end justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8"
+        role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
+        <!-- Modal Dialog -->
+        <div x-show="detailModalIsOpen"
+            x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity"
+            x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
+            class="flex max-w-lg flex-col gap-4 overflow-hidden rounded-sm border border-neutral-300 bg-white text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+            <!-- Dialog Header -->
+            <div
+                class="flex items-center justify-between border-b border-neutral-300 bg-neutral-50/60 p-4 dark:border-neutral-700 dark:bg-neutral-950/20">
+                <h3 id="defaultModalTitle" class="font-semibold tracking-wide text-neutral-900 dark:text-white">Todo
+                </h3>
+                <button x-on:click="detailModalIsOpen = false" aria-label="close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor"
+                        fill="none" stroke-width="1.4" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Dialog Body -->
+            <div id="modal-content">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"
+                    class="size-7 fill-on-surface motion-safe:animate-spin dark:fill-on-surface-dark">
+                    <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+                        opacity=".25" />
+                    <path
+                        d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z" />
+                </svg>
+                >
+            </div>
+            <!-- Dialog Footer -->
+
+        </div>
+    </div>
+</section>
+{% endblock content %}

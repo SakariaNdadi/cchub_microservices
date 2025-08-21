@@ -1,0 +1,15 @@
+# Environment variables
+
+.env
+
+# Go build output
+
+go-todo-processor
+go-todo-processor.exe
+
+# Dependency directories
+
+vendor/
+_.sqlite3
+_.exe
+.gitignore
